@@ -1,0 +1,87 @@
+name: Quality Windows
+
+on:
+  push:
+    branches:
+      - "**"
+  pull_request:
+
+jobs:
+  quality:
+    runs-on: windows-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Install FFmpeg
+        shell: pwsh
+        run: |
+          if (Get-Command choco -ErrorAction SilentlyContinue) {
+            choco install ffmpeg -y --no-progress
+          } else {
+            winget install --id Gyan.FFmpeg --exact --accept-source-agreements --accept-package-agreements --scope machine
+          }
+
+      - name: Install Inno Setup
+        shell: pwsh
+        run: |
+          if (Get-Command choco -ErrorAction SilentlyContinue) {
+            choco install innosetup -y --no-progress
+          } else {
+            winget install --id JRSoftware.InnoSetup --exact --accept-source-agreements --accept-package-agreements --scope machine
+          }
+
+      - name: Install WiX Toolset
+        shell: pwsh
+        run: |
+          if (Get-Command choco -ErrorAction SilentlyContinue) {
+            choco install wixtoolset -y --no-progress
+          } else {
+            winget install --id WiXToolset.WiXToolset --exact --accept-source-agreements --accept-package-agreements --scope machine
+          }
+
+      - name: FFmpeg Healthcheck
+        run: npm run ffmpeg:healthcheck
+
+      - name: Unit and Integration Tests
+        run: npm run test
+
+      - name: E2E Resilience Tests
+        run: npm run test:e2e
+
+      - name: Build Windows Alpha Package
+        env:
+          LAIVE_BUILD_WINDOWS_INSTALLER: "1"
+          LAIVE_BUILD_WINDOWS_MSI: "1"
+        run: npm run package:windows-alpha
+
+      - name: Verify Windows Alpha Package
+        shell: pwsh
+        run: |
+          powershell -ExecutionPolicy Bypass -File scripts/verify-windows-alpha.ps1 -BundleRoot dist/windows-alpha/bundle -ChecksumsFile dist/windows-alpha/checksums.sha256 -IncludeExternal
+
+      - name: Upload Windows Alpha Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: laive-obs-windows-alpha
+          if-no-files-found: warn
+          path: |
+            dist/windows-alpha/laive-obs-windows-alpha.zip
+            dist/windows-alpha/checksums.sha256
+            dist/windows-alpha/build-metadata.json
+            dist/windows-alpha/bundle/checksums.bundle.sha256
+            dist/windows-alpha/laive-obs-windows-alpha-installer.exe
+            dist/windows-alpha/installer-metadata.json
+            dist/windows-alpha/laive-obs-windows-alpha-installer.msi
+            dist/windows-alpha/msi-metadata.json

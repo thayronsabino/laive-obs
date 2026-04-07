@@ -1,0 +1,16 @@
+{
+  "releaseTag": "v0.1.1-alpha",
+  "approvedBy": "Thayron Sabino / Codex",
+  "approvedAtUtc": "2026-04-07T00:00:00Z",
+  "parityMatrixStatus": "closed",
+  "notes": "Alpha readiness achieved. All functional parity criteria approved for initial cross-platform distribution.",
+  "checklist": {
+    "productApproval": true,
+    "qaApproval": true,
+    "packagingSmokeVerified": true,
+    "securityReviewAcknowledged": true,
+    "parityMatrixReviewed": true,
+    "ciArtifactsReviewed": true,
+    "knownGapsAcceptedForChannel": true
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "name": "@laive/ffmpeg-infra",
+  "version": "0.1.0-alpha",
+  "private": true,
+  "scripts": {
+    "healthcheck": "node healthcheck.js"
+  }
+}

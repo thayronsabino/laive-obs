@@ -1,0 +1,235 @@
+name: Release Promotion
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag de release existente (ex: v0.2.0-alpha)"
+        required: true
+        type: string
+      channel:
+        description: "Canal de promocao"
+        required: true
+        type: choice
+        options:
+          - alpha
+          - beta
+          - stable
+      run_soak:
+        description: "Executar soak test adicional neste gate"
+        required: true
+        default: false
+        type: boolean
+      soak_duration_sec:
+        description: "Duracao do soak test (segundos)"
+        required: true
+        default: "900"
+        type: string
+
+permissions:
+  contents: write
+  actions: read
+  deployments: write
+
+concurrency:
+  group: release-promotion-${{ github.event.inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      run_soak: ${{ steps.flags.outputs.run_soak }}
+
+    steps:
+      - name: Validate Channel and Tag Convention
+        shell: bash
+        env:
+          CHANNEL: ${{ github.event.inputs.channel }}
+          TAG: ${{ github.event.inputs.tag }}
+        run: |
+          set -euo pipefail
+          tag_lc="$(echo "$TAG" | tr '[:upper:]' '[:lower:]')"
+          case "$CHANNEL" in
+            alpha)
+              [[ "$tag_lc" == *"alpha"* ]] || { echo "Alpha promotion requires an alpha tag."; exit 1; }
+              ;;
+            beta)
+              [[ "$tag_lc" == *"beta"* || "$tag_lc" == *"rc"* ]] || { echo "Beta promotion requires beta/rc tag."; exit 1; }
+              ;;
+            stable)
+              [[ "$tag_lc" != *"alpha"* && "$tag_lc" != *"beta"* && "$tag_lc" != *"rc"* ]] || { echo "Stable promotion requires non-prerelease tag."; exit 1; }
+              ;;
+            *)
+              echo "Unsupported channel: $CHANNEL"
+              exit 1
+              ;;
+          esac
+
+      - name: Validate Promotion Chain
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CHANNEL: ${{ github.event.inputs.channel }}
+          TAG: ${{ github.event.inputs.tag }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          assets="$(gh release view "$TAG" --repo "$REPO" --json assets --jq '.assets[].name')"
+          if [[ "$CHANNEL" == "beta" ]]; then
+            echo "$assets" | grep -qx "promotion-alpha.json" || { echo "Beta promotion requires previous alpha promotion marker."; exit 1; }
+          fi
+          if [[ "$CHANNEL" == "stable" ]]; then
+            echo "$assets" | grep -qx "promotion-beta.json" || { echo "Stable promotion requires previous beta promotion marker."; exit 1; }
+          fi
+
+      - name: Resolve Soak Flag
+        id: flags
+        shell: bash
+        env:
+          CHANNEL: ${{ github.event.inputs.channel }}
+          RUN_SOAK: ${{ github.event.inputs.run_soak }}
+        run: |
+          set -euo pipefail
+          if [[ "$CHANNEL" != "alpha" || "$RUN_SOAK" == "true" ]]; then
+            echo "run_soak=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run_soak=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  gate-tests:
+    runs-on: windows-latest
+    timeout-minutes: 120
+    needs: preflight
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Install FFmpeg
+        shell: pwsh
+        run: |
+          if (Get-Command choco -ErrorAction SilentlyContinue) {
+            choco install ffmpeg -y --no-progress
+          } else {
+            winget install --id Gyan.FFmpeg --exact --accept-source-agreements --accept-package-agreements --scope machine
+          }
+
+      - name: Unit and Integration Tests
+        run: npm run test
+
+      - name: E2E Resilience Tests
+        run: npm run test:e2e
+
+      - name: E2E Soak Tests
+        if: ${{ needs.preflight.outputs.run_soak == 'true' }}
+        shell: pwsh
+        env:
+          SOAK_DURATION_SEC: ${{ github.event.inputs.soak_duration_sec }}
+        run: |
+          powershell -ExecutionPolicy Bypass -File scripts/run-e2e-soak-tests.ps1 -DurationSec ([int]$env:SOAK_DURATION_SEC)
+
+  gate-artifacts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs:
+      - preflight
+      - gate-tests
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download Release Assets
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.event.inputs.tag }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          rm -rf release-assets
+          mkdir -p release-assets
+          gh release download "$TAG" --repo "$REPO" --dir release-assets
+          find release-assets -maxdepth 2 -type f | sort
+
+      - name: Verify Release Promotion Gates
+        run: |
+          node scripts/verify-release-promotion-gates.mjs \
+            --assets-dir release-assets \
+            --channel "${{ github.event.inputs.channel }}" \
+            --tag "${{ github.event.inputs.tag }}" \
+            --summary-path promotion-gate-summary.json
+
+      - name: Upload Promotion Gate Summary
+        uses: actions/upload-artifact@v4
+        with:
+          name: promotion-gate-summary-${{ github.event.inputs.tag }}-${{ github.event.inputs.channel }}
+          if-no-files-found: warn
+          path: promotion-gate-summary.json
+
+  promote:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs:
+      - preflight
+      - gate-artifacts
+    environment: ${{ github.event.inputs.channel }}
+
+    steps:
+      - name: Apply Release Channel Flags
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.event.inputs.tag }}
+          CHANNEL: ${{ github.event.inputs.channel }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          release_json="$(gh api "repos/$REPO/releases/tags/$TAG")"
+          release_id="$(echo "$release_json" | node -e 'const fs=require("node:fs"); const input=fs.readFileSync(0,"utf8"); const parsed=JSON.parse(input); process.stdout.write(String(parsed.id ?? ""));')"
+          if [[ -z "$release_id" || "$release_id" == "null" ]]; then
+            echo "Failed to resolve release id for tag $TAG"
+            exit 1
+          fi
+
+          if [[ "$CHANNEL" == "stable" ]]; then
+            gh api -X PATCH "repos/$REPO/releases/$release_id" -f prerelease=false -f draft=false -f make_latest=true >/dev/null
+          else
+            gh api -X PATCH "repos/$REPO/releases/$release_id" -f prerelease=true -f draft=false >/dev/null
+          fi
+
+      - name: Publish Promotion Marker
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.event.inputs.tag }}
+          CHANNEL: ${{ github.event.inputs.channel }}
+          REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+          ACTOR: ${{ github.actor }}
+          SOAK_EXECUTED: ${{ needs.preflight.outputs.run_soak }}
+        run: |
+          set -euo pipefail
+          marker_file="promotion-$CHANNEL.json"
+          cat > "$marker_file" <<EOF
+          {
+            "generatedAtUtc": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
+            "tag": "$TAG",
+            "channel": "$CHANNEL",
+            "runId": "$RUN_ID",
+            "actor": "$ACTOR",
+            "soakExecuted": $SOAK_EXECUTED
+          }
+          EOF
+          gh release upload "$TAG" "$marker_file" --repo "$REPO" --clobber

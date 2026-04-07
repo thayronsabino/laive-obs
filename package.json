@@ -1,0 +1,29 @@
+{
+  "name": "laive-obs-monorepo",
+  "version": "0.1.0-alpha",
+  "private": true,
+  "description": "LAIVE OBS Standalone Hybrid MVP",
+  "workspaces": [
+    "apps/*",
+    "infra/*"
+  ],
+  "scripts": {
+    "dev:core": "npm --workspace apps/core-service run dev",
+    "dev:dashboard": "npm --workspace apps/dashboard run dev",
+    "dev:desktop": "npm --workspace apps/desktop-shell run dev",
+    "test": "npm --workspace apps/core-service run test",
+    "test:e2e": "powershell -ExecutionPolicy Bypass -File scripts/run-e2e-tests.ps1",
+    "test:e2e:soak": "powershell -ExecutionPolicy Bypass -File scripts/run-e2e-soak-tests.ps1",
+    "quality:local": "powershell -ExecutionPolicy Bypass -File scripts/run-quality-local.ps1",
+    "ffmpeg:healthcheck": "npm --workspace infra/ffmpeg run healthcheck",
+    "package:windows-alpha": "powershell -ExecutionPolicy Bypass -File scripts/package-windows-alpha.ps1",
+    "package:windows-installer": "powershell -ExecutionPolicy Bypass -Command \"$env:LAIVE_BUILD_WINDOWS_INSTALLER='1'; & ./scripts/package-windows-alpha.ps1\"",
+    "package:windows-msi": "powershell -ExecutionPolicy Bypass -Command \"$env:LAIVE_BUILD_WINDOWS_MSI='1'; & ./scripts/package-windows-alpha.ps1\"",
+    "package:windows-enterprise": "powershell -ExecutionPolicy Bypass -Command \"$env:LAIVE_BUILD_WINDOWS_INSTALLER='1'; $env:LAIVE_BUILD_WINDOWS_MSI='1'; & ./scripts/package-windows-alpha.ps1\"",
+    "package:macos-alpha": "bash scripts/package-unix-alpha.sh --platform macos",
+    "package:linux-alpha": "bash scripts/package-unix-alpha.sh --platform linux"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

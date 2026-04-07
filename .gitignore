@@ -1,0 +1,8 @@
+node_modules/
+dist/
+build/
+coverage/
+.env
+apps/core-service/data/
+*.log
+obs-multi-rtmp (projeto referencia)/

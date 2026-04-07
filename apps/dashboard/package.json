@@ -1,0 +1,8 @@
+{
+  "name": "@laive/dashboard",
+  "version": "0.1.0-alpha",
+  "private": true,
+  "scripts": {
+    "dev": "node -e \"console.log('Dashboard is served by core-service at http://127.0.0.1:4800')\""
+  }
+}

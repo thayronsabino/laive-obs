@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LAIVE OBS — Dashboard Executivo para OBS Studio</title>
+  <meta name="description" content="Dashboard híbrido e app standalone para gerenciar múltiplas transmissões simultâneas a partir do OBS. Estabilidade via FFmpeg e acesso remoto via Web." />
+  <meta name="keywords" content="OBS, multi-streaming, RTMP, app standalone, live, YouTube, Instagram, Twitch, FFmpeg, open source" />
+  <meta property="og:title" content="LAIVE OBS — Dashboard Executivo" />
+  <meta property="og:description" content="Transmita para infinitas plataformas ao mesmo tempo com este motor standalone e dashboard híbrido, livrando seu OBS Studio de travamentos." />
+  <meta property="og:type" content="website" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- Navigation -->
+  <nav class="navbar" id="navbar">
+    <div class="nav-container">
+      <a href="#" class="nav-logo">
+        <span class="logo-icon">🔴</span>
+        <span class="logo-text">LAIVE <span class="logo-accent">OBS</span></span>
+      </a>
+      <div class="nav-links" id="navLinks">
+        <a href="#features">Recursos</a>
+        <a href="#platforms">Plataformas</a>
+        <a href="#how-it-works">Como Funciona</a>
+        <a href="#comparison">Comparativo</a>
+        <a href="#download" class="nav-cta">Download Gratuito</a>
+      </div>
+      <button class="nav-toggle" id="navToggle" aria-label="Menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="hero" id="hero">
+    <div class="hero-bg">
+      <div class="hero-grid"></div>
+      <div class="hero-glow hero-glow-1"></div>
+      <div class="hero-glow hero-glow-2"></div>
+      <div class="hero-glow hero-glow-3"></div>
+    </div>
+    <div class="container hero-content">
+      <div class="hero-badge">
+        <span class="badge-dot"></span>
+        Source Available & Gratuito para Igrejas
+      </div>
+      <h1 class="hero-title">
+        Transmita para <span class="gradient-text">múltiplas plataformas</span> ao mesmo tempo
+      </h1>
+      <p class="hero-subtitle">
+        Aplicativo standalone avançado e dashboard executivo híbrido que se conecta ao OBS Studio, permitindo transmitir sua live para infinitos destinos simultaneamente via engine FFmpeg — máxima estabilidade sem travamentos.
+      </p>
+      <div class="hero-actions">
+        <a href="https://github.com/thayronsabino/laive-obs/releases/latest" class="btn btn-primary btn-lg" id="heroDownload">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Download Gratuito
+        </a>
+        <a href="https://github.com/thayronsabino/laive-obs" class="btn btn-ghost btn-lg">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+          Ver no GitHub
+        </a>
+      </div>
+      <div class="hero-stats">
+        <div class="stat">
+          <span class="stat-number" id="statPlatforms">∞</span>
+          <span class="stat-label">Destinos Simultâneos</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat">
+          <span class="stat-number">3</span>
+          <span class="stat-label">Sistemas Operacionais</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat">
+          <span class="stat-number">71</span>
+          <span class="stat-label">Idiomas Suportados</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat">
+          <span class="stat-number">R$ 0</span>
+          <span class="stat-label">Para Igrejas e ONGs</span>
+        </div>
+      </div>
+    </div>
+    <div class="hero-scroll-indicator">
+      <span>Deslize para explorar</span>
+      <div class="scroll-arrow"></div>
+    </div>
+  </section>
+
+  <!-- Architecture Section -->
+  <section class="architecture" id="architecture">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">Arquitetura</span>
+        <h2 class="section-title">Uma fonte. Infinitos destinos.</h2>
+        <p class="section-subtitle">O LAIVE OBS trabalha como um centro de comando híbrido, consumindo apenas 1 feed master do OBS e replicando nativamente via threads de FFmpeg locais.</p>
+      </div>
+      <div class="arch-diagram">
+        <div class="arch-source">
+          <div class="arch-node arch-obs">
+            <div class="arch-icon">🎬</div>
+            <span>OBS Studio</span>
+            <small>Cenas, Overlays, Filtros</small>
+          </div>
+          <div class="arch-connector arch-main-line"></div>
+          <div class="arch-node arch-plugin">
+            <div class="arch-icon">🔴</div>
+            <span>LAIVE OBS</span>
+            <small>App Standalone + FFmpeg</small>
+          </div>
+        </div>
+        <div class="arch-outputs">
+          <div class="arch-line-container">
+            <div class="arch-branch-line"></div>
+          </div>
+          <div class="arch-destinations">
+            <div class="arch-dest" style="--delay: 0">
+              <div class="arch-dest-icon" style="--color: #FF0000">▶️</div>
+              <span>YouTube</span>
+            </div>
+            <div class="arch-dest" style="--delay: 1">
+              <div class="arch-dest-icon" style="--color: #E4405F">📸</div>
+              <span>Instagram</span>
+            </div>
+            <div class="arch-dest" style="--delay: 2">
+              <div class="arch-dest-icon" style="--color: #1877F2">📘</div>
+              <span>Facebook</span>
+            </div>
+            <div class="arch-dest" style="--delay: 3">
+              <div class="arch-dest-icon" style="--color: #9146FF">💜</div>
+              <span>Twitch</span>
+            </div>
+            <div class="arch-dest" style="--delay: 4">
+              <div class="arch-dest-icon" style="--color: #00F2EA">🎵</div>
+              <span>TikTok</span>
+            </div>
+            <div class="arch-dest" style="--delay: 5">
+              <div class="arch-dest-icon" style="--color: #0A66C2">💼</div>
+              <span>LinkedIn</span>
+            </div>
+            <div class="arch-dest" style="--delay: 6">
+              <div class="arch-dest-icon" style="--color: #F5C518">📺</div>
+              <span>Kwai</span>
+            </div>
+            <div class="arch-dest" style="--delay: 7">
+              <div class="arch-dest-icon" style="--color: #00C853">🖥️</div>
+              <span>Custom RTMP</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section class="features" id="features">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">Recursos</span>
+        <h2 class="section-title">Tudo que você precisa para dominar o multi-streaming</h2>
+        <p class="section-subtitle">Controle total sobre cada destino com configurações independentes de encoder, resolução, framerate e áudio.</p>
+      </div>
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon-wrap"><span class="feature-icon">⚡</span></div>
+          <h3>Engine FFmpeg C-Level</h3>
+          <p>Diferente de antigos plugins que crachavam o OBS, o LAIVE OBS atua em processos paralelos de FFmpeg garantindo 0 dropframes no seu software base principal.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon-wrap"><span class="feature-icon">🎛️</span></div>
+          <h3>Configuração Independente</h3>
+          <p>Cada destino pode ter sua própria resolução, framerate, bitrate, encoder dedicado, mixer de áudio e até cena específica do OBS.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon-wrap"><span class="feature-icon">🔄</span></div>
+          <h3>Sincronização Automática</h3>
+          <p>Inicie e pare todos os destinos junto com o botão do OBS, ou controle cada destino individualmente. Você decide o nível de automação.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon-wrap"><span class="feature-icon">📐</span></div>
+          <h3>Vertical + Horizontal</h3>
+          <p>Transmita em formato 16:9 para YouTube e 9:16 para Instagram/TikTok simultaneamente, usando cenas diferentes para cada destino.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon-wrap"><span class="feature-icon">🌐</span></div>
+          <h3>Multi-Protocolo</h3>
+          <p>Suporte nativo a RTMP, SRT/RIST e WebRTC (WHIP). Compatível com qualquer serviço de streaming que aceite ingestão por protocolo padrão.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon-wrap"><span class="feature-icon">🔊</span></div>
+          <h3>Mixers de Áudio Dedicados</h3>
+          <p>Direcione diferentes fontes de áudio para diferentes plataformas. Envie música para o YouTube e apenas voz para o Instagram, por exemplo.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon-wrap"><span class="feature-icon">📊</span></div>
+          <h3>Status em Tempo Real</h3>
+          <p>Monitore cada destino com indicadores visuais: conectando, transmitindo, reconectando. Reconexão automática em caso de queda.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon-wrap"><span class="feature-icon">📱</span></div>
+          <h3>Acesso Híbrido Remoto</h3>
+          <p>Injete no OBS via Browser Docks ou abra o web-dashboard em seu celular ou tablet pela mesma rede wifi para operações remotas de controle panorâmico.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Platforms Section -->
+  <section class="platforms" id="platforms">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">Multiplataforma</span>
+        <h2 class="section-title">Disponível para todos os sistemas operacionais</h2>
+        <p class="section-subtitle">Instaladores nativos para cada plataforma, compilados automaticamente via CI/CD a cada versão.</p>
+      </div>
+      <div class="platforms-grid">
+        <div class="platform-card">
+          <div class="platform-icon">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor"><path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-13.051-1.851"/></svg>
+          </div>
+          <h3>Windows</h3>
+          <p>Instalador <code>.exe</code> com assistente gráfico. Compatível com Windows 10 e 11 (64-bit).</p>
+          <span class="platform-arch">x64</span>
+        </div>
+        <div class="platform-card">
+          <div class="platform-icon">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+          </div>
+          <h3>macOS</h3>
+          <p>Instalador <code>.pkg</code> universal. Compatível com Intel e Apple Silicon (M1/M2/M3/M4).</p>
+          <span class="platform-arch">Universal</span>
+        </div>
+        <div class="platform-card">
+          <div class="platform-icon">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor"><path d="M12.504 0c-.155 0-.311.002-.465.007-.612.024-1.209.134-1.78.328a4.698 4.698 0 0 0-1.556.9 4.745 4.745 0 0 0-1.073 1.38c-.29.533-.48 1.108-.564 1.7-.084.59-.063 1.192.062 1.77L.75 17.654c-.062.154-.096.32-.096.494 0 .66.454 1.234 1.096 1.395l3.156.886c.346.978 1.108 1.746 2.076 2.104l.88 3.096c.154.59.644 1.042 1.24 1.152.072.014.146.02.22.02.506 0 .972-.289 1.198-.748l1.558-3.194a4.086 4.086 0 0 0 1.366 0l1.558 3.194c.225.46.692.747 1.198.747.072 0 .148-.007.22-.02.596-.11 1.086-.563 1.24-1.152l.88-3.096c.968-.358 1.73-1.126 2.076-2.104l3.156-.886c.642-.16 1.096-.735 1.096-1.395 0-.174-.034-.34-.096-.493L17.468 6.085c.126-.578.146-1.18.062-1.77a4.742 4.742 0 0 0-.564-1.7 4.745 4.745 0 0 0-1.073-1.38 4.698 4.698 0 0 0-1.555-.9 4.685 4.685 0 0 0-1.78-.328A6.32 6.32 0 0 0 12.505 0zm-.223 1.834a2.987 2.987 0 0 1 .448 0 2.82 2.82 0 0 1 1.072.2 2.85 2.85 0 0 1 .946.546c.282.261.505.573.66.923.154.35.238.73.247 1.116L12 13.078 8.347 4.62c.01-.387.093-.766.247-1.117.155-.35.378-.662.66-.923a2.85 2.85 0 0 1 .946-.546 2.82 2.82 0 0 1 1.072-.2z"/></svg>
+          </div>
+          <h3>Linux</h3>
+          <p>Pacote <code>.deb</code> nativo. Compatível com Ubuntu 24.04 e distribuições baseadas em Debian.</p>
+          <span class="platform-arch">x86_64</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- How It Works Section -->
+  <section class="how-it-works" id="how-it-works">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">Setup em 3 Minutos</span>
+        <h2 class="section-title">Como funciona</h2>
+        <p class="section-subtitle">Do download à transmissão em poucos cliques.</p>
+      </div>
+      <div class="steps">
+        <div class="step">
+          <div class="step-number">01</div>
+          <div class="step-content">
+            <h3>Instale a Engine</h3>
+            <p>Baixe nosso instalador para seu sistema operativo. O LAIVE OBS ativará automaticamente as pontes com os WebSockets do seu OBS de forma invisível.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-number">02</div>
+          <div class="step-content">
+            <h3>Adicione seus Destinos</h3>
+            <p>Abra o <strong>LAIVE OBS</strong> (direto no seu Desktop, navegador ou nas Docks do OBS) e clique em <strong>"Adicionar novo destino"</strong>. Insira chaves independentes sem atrito.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-number">03</div>
+          <div class="step-content">
+            <h3>Transmita para Todos</h3>
+            <p>Clique em <strong>"Iniciar Tudo"</strong> e pronto — sua live está sendo distribuída simultaneamente para todas as plataformas configuradas.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Detailed Config Section -->
+  <section class="config-section" id="config">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">Controle Granular</span>
+        <h2 class="section-title">Configuração completa por destino</h2>
+        <p class="section-subtitle">Cada destino possui seu próprio conjunto de configurações, permitindo otimização individualizada.</p>
+      </div>
+      <div class="config-table-wrap">
+        <table class="config-table">
+          <thead>
+            <tr>
+              <th>Configuração</th>
+              <th>Opções</th>
+              <th>Descrição</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="config-label">🌐 Protocolo</span></td>
+              <td><code>RTMP</code> <code>SRT/RIST</code> <code>WebRTC (WHIP)</code></td>
+              <td>Protocolo de ingestão usado pelo serviço de streaming</td>
+            </tr>
+            <tr>
+              <td><span class="config-label">🎥 Encoder de Vídeo</span></td>
+              <td><code>Compartilhado OBS</code> <code>Dedicado</code></td>
+              <td>Reutilize o encoder do OBS ou crie um exclusivo</td>
+            </tr>
+            <tr>
+              <td><span class="config-label">📐 Resolução</span></td>
+              <td><code>1920×1080</code> <code>1080×1920</code> <code>Custom</code></td>
+              <td>Resolução independente — landscape ou portrait</td>
+            </tr>
+            <tr>
+              <td><span class="config-label">🎞️ Framerate</span></td>
+              <td><code>30 FPS</code> <code>60 FPS</code> <code>Custom</code></td>
+              <td>Taxa de quadros configurável por destino</td>
+            </tr>
+            <tr>
+              <td><span class="config-label">🔢 B-Frames</span></td>
+              <td><code>0</code> a <code>4</code></td>
+              <td>Controle de B-frames para otimização de compressão</td>
+            </tr>
+            <tr>
+              <td><span class="config-label">🔊 Mixer de Áudio</span></td>
+              <td><code>1</code> a <code>6</code></td>
+              <td>Direcione diferentes fontes de áudio por destino</td>
+            </tr>
+            <tr>
+              <td><span class="config-label">🎬 Cena</span></td>
+              <td><code>Padrão</code> <code>Cena Específica</code></td>
+              <td>Envie cenas diferentes para plataformas diferentes</td>
+            </tr>
+            <tr>
+              <td><span class="config-label">💿 VOD Track</span></td>
+              <td><code>Ativo</code> <code>Inativo</code></td>
+              <td>Faixa de áudio separada para gravações VOD</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- Comparison Section -->
+  <section class="comparison" id="comparison">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">Sem Competição</span>
+        <h2 class="section-title">Por que o LAIVE OBS é diferente</h2>
+        <p class="section-subtitle">A modernização que abandonou a era de "plugins amadores" e trouxe arquitetura de nuvem para a sua máquina local.</p>
+      </div>
+      <div class="comparison-table-wrap">
+        <table class="comparison-table">
+          <thead>
+            <tr>
+              <th>Funcionalidade</th>
+              <th class="highlight-col">LAIVE OBS</th>
+              <th>Serviços na Nuvem</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Preço</td>
+              <td class="highlight-col"><span class="check">✅</span> Grátis p/ Igrejas & ONGs</td>
+              <td><span class="cross">❌</span> $15–$89/mês</td>
+            </tr>
+            <tr>
+              <td>Limite de destinos</td>
+              <td class="highlight-col"><span class="check">✅</span> Ilimitado</td>
+              <td><span class="cross">❌</span> 2–8 por plano</td>
+            </tr>
+            <tr>
+              <td>Processamento</td>
+              <td class="highlight-col"><span class="check">✅</span> Local (sua máquina)</td>
+              <td><span class="cross">⚠️</span> Nuvem (dependência)</td>
+            </tr>
+            <tr>
+              <td>Latência adicional</td>
+              <td class="highlight-col"><span class="check">✅</span> Zero</td>
+              <td><span class="cross">❌</span> 2–15 segundos</td>
+            </tr>
+            <tr>
+              <td>Encoder por destino</td>
+              <td class="highlight-col"><span class="check">✅</span> Configurável</td>
+              <td><span class="cross">❌</span> Fixo</td>
+            </tr>
+            <tr>
+              <td>Resolução por destino</td>
+              <td class="highlight-col"><span class="check">✅</span> Independente</td>
+              <td><span class="cross">❌</span> Mesma para todos</td>
+            </tr>
+            <tr>
+              <td>Cena por destino</td>
+              <td class="highlight-col"><span class="check">✅</span> Sim</td>
+              <td><span class="cross">❌</span> Não</td>
+            </tr>
+            <tr>
+              <td>Privacidade</td>
+              <td class="highlight-col"><span class="check">✅</span> Dados ficam com você</td>
+              <td><span class="cross">⚠️</span> Passa por terceiros</td>
+            </tr>
+            <tr>
+              <td>Código fonte</td>
+              <td class="highlight-col"><span class="check">✅</span> Source Available</td>
+              <td><span class="cross">❌</span> Closed Source</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- Protocols Section -->
+  <section class="protocols" id="protocols">
+    <div class="container">
+      <div class="protocols-grid">
+        <div class="protocol-card">
+          <div class="protocol-icon">📡</div>
+          <h3>RTMP / RTMPS</h3>
+          <p>Protocolo padrão da indústria. Compatível com YouTube, Instagram, Facebook, Twitch, TikTok, LinkedIn, Kwai e virtualmente qualquer plataforma de streaming.</p>
+          <span class="protocol-badge">Mais Usado</span>
+        </div>
+        <div class="protocol-card">
+          <div class="protocol-icon">🔒</div>
+          <h3>SRT / RIST</h3>
+          <p>Protocolos de baixa latência e alta confiabilidade. Ideais para links instáveis, transmissões remotas e contribuição de produção ao vivo.</p>
+          <span class="protocol-badge">Baixa Latência</span>
+        </div>
+        <div class="protocol-card">
+          <div class="protocol-icon">🌐</div>
+          <h3>WebRTC (WHIP)</h3>
+          <p>Protocolo de nova geração para ultra-baixa latência. Suporte via WHIP (WebRTC-HTTP Ingestion Protocol) para serviços modernos.</p>
+          <span class="protocol-badge">Ultra-Baixa Latência</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Download CTA Section -->
+  <section class="download-cta" id="download">
+    <div class="container">
+      <div class="download-card">
+        <div class="download-glow"></div>
+        <h2>Suma de cena com maestria</h2>
+        <p>Baixe o LAIVE OBS, adicione seus destinos com controle total de bitrate inteligente. Desempenho e interface executiva para seu staff técnico.</p>
+        <div class="download-buttons">
+          <a href="https://github.com/thayronsabino/laive-obs/releases/latest" class="btn btn-primary btn-xl">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Download Gratuito — Última Versão
+          </a>
+        </div>
+        <div class="download-platforms-row">
+          <span>Windows (.exe)</span>
+          <span class="dot">·</span>
+          <span>macOS (.pkg)</span>
+          <span class="dot">·</span>
+          <span>Linux (.deb)</span>
+        </div>
+        <p class="download-note">Requer OBS Studio 32.0+ instalado. Licença LAIVE (Source Available).</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Open Source Section -->
+  <section class="open-source" id="open-source">
+    <div class="container">
+      <div class="os-content">
+        <div class="os-text">
+          <span class="section-tag">Source Available</span>
+          <h2>Acesso ao código, Transparência Corporativa</h2>
+          <p>O LAIVE OBS adota a licença transparente de código (Source Available). Nossa arquitetura de CI/CD via GitHub Actions garante que os executáveis que você instala são gerados de forma audível, transparente e automatizada diretamente nos servidores da Microsoft e Apple. Extrema maturidade corporativa sem "versões ocultas".</p>
+          <ul class="os-list">
+            <li>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00E676" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+              Código fonte completo no GitHub
+            </li>
+            <li>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00E676" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+              CI/CD automatizado com GitHub Actions
+            </li>
+            <li>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00E676" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+              Sem telemetria, sem rastreamento, sem dependências externas
+            </li>
+            <li>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00E676" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+              Documentação completa para desenvolvedores
+            </li>
+          </ul>
+          <a href="https://github.com/thayronsabino/laive-obs" class="btn btn-ghost">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+            Ver Repositório no GitHub
+          </a>
+        </div>
+        <div class="os-code">
+          <div class="code-window">
+            <div class="code-header">
+              <div class="code-dots">
+                <span class="dot-red"></span>
+                <span class="dot-yellow"></span>
+                <span class="dot-green"></span>
+              </div>
+              <span class="code-filename">terminal</span>
+            </div>
+            <pre class="code-body"><code><span class="code-comment"># Clone o repositório</span>
+<span class="code-cmd">git clone</span> https://github.com/thayronsabino/laive-obs.git
+
+<span class="code-comment"># Estrutura do projeto</span>
+<span class="code-cmd">src/</span>
+├── obs-multi-rtmp.cpp    <span class="code-comment"># Núcleo do plugin</span>
+├── push-widget.cpp       <span class="code-comment"># Interface de controle</span>
+├── edit-widget.cpp       <span class="code-comment"># Editor de destinos</span>
+├── output-config.cpp     <span class="code-comment"># Persistência</span>
+└── protocols.cpp         <span class="code-comment"># RTMP, SRT, WebRTC</span>
+
+<span class="code-comment"># 71 idiomas em data/locale/</span>
+<span class="code-cmd">data/locale/</span>
+├── pt-BR.ini             <span class="code-comment"># Português (Brasil)</span>
+├── en-US.ini             <span class="code-comment"># Inglês</span>
+├── es-ES.ini             <span class="code-comment"># Espanhol</span>
+└── ... <span class="code-comment"># +68 idiomas</span></code></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-content">
+        <div class="footer-brand">
+          <span class="logo-icon">🔴</span>
+          <span class="logo-text">LAIVE <span class="logo-accent">OBS</span></span>
+          <p>Infraestrutura própria. Eficiência máxima. Controle total.</p>
+        </div>
+        <div class="footer-links">
+          <div class="footer-col">
+            <h4>Produto</h4>
+            <a href="#features">Recursos</a>
+            <a href="#platforms">Plataformas</a>
+            <a href="#comparison">Comparativo</a>
+            <a href="#download">Download</a>
+          </div>
+          <div class="footer-col">
+            <h4>Documentação</h4>
+            <a href="https://github.com/thayronsabino/laive-obs#readme">README</a>
+            <a href="guia-instagram-live.html">Guia Instagram Live</a>
+            <a href="https://github.com/thayronsabino/laive-obs/issues">Reportar Bug</a>
+          </div>
+          <div class="footer-col">
+            <h4>Comunidade</h4>
+            <a href="https://github.com/thayronsabino/laive-obs">GitHub</a>
+            <a href="https://github.com/thayronsabino/laive-obs/releases">Releases</a>
+            <a href="https://github.com/thayronsabino/laive-obs/blob/master/LICENSE LAIVE OBS.md">Licença LAIVE</a>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2026 LAIVE. Source Available.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>

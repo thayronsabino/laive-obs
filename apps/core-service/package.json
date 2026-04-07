@@ -1,0 +1,19 @@
+{
+  "name": "@laive/core-service",
+  "version": "0.1.0-alpha",
+  "private": true,
+  "main": "src/index.js",
+  "scripts": {
+    "dev": "node src/index.js",
+    "start": "node src/index.js",
+    "test": "node --test",
+    "test:e2e:internal": "node --test --test-force-exit test/e2e-network-resilience.test.js",
+    "test:e2e:soak:internal": "node --test --test-force-exit test/e2e-soak-session.test.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "node-media-server": "^4.1.0",
+    "obs-websocket-js": "^5.0.6",
+    "ws": "^8.18.0"
+  }
+}

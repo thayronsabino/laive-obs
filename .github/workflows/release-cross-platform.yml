@@ -1,0 +1,306 @@
+name: Release Cross Platform
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag de release (ex: v0.1.0-alpha)"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  parity-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Verify Parity Release Checklist
+        run: |
+          node scripts/verify-parity-release-gate.mjs \
+            --tag "${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag || github.ref_name }}" \
+            --checklist-path docs/RELEASE_PARITY_CHECKLIST.json \
+            --matrix-path docs/PARIDADE_OBS_MULTI_RTMP.md \
+            --summary-path parity-release-gate-summary.json
+
+      - name: Upload Parity Gate Summary
+        uses: actions/upload-artifact@v4
+        with:
+          name: parity-release-gate-summary
+          if-no-files-found: error
+          path: parity-release-gate-summary.json
+
+  build-windows:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    needs:
+      - parity-gate
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Install FFmpeg
+        shell: pwsh
+        run: |
+          if (Get-Command choco -ErrorAction SilentlyContinue) {
+            choco install ffmpeg -y --no-progress
+          } else {
+            winget install --id Gyan.FFmpeg --exact --accept-source-agreements --accept-package-agreements --scope machine
+          }
+
+      - name: Install Inno Setup
+        shell: pwsh
+        run: |
+          if (Get-Command choco -ErrorAction SilentlyContinue) {
+            choco install innosetup -y --no-progress
+          } else {
+            winget install --id JRSoftware.InnoSetup --exact --accept-source-agreements --accept-package-agreements --scope machine
+          }
+
+      - name: Install WiX Toolset
+        shell: pwsh
+        run: |
+          if (Get-Command choco -ErrorAction SilentlyContinue) {
+            choco install wixtoolset -y --no-progress
+          } else {
+            winget install --id WiXToolset.WiXToolset --exact --accept-source-agreements --accept-package-agreements --scope machine
+          }
+
+      - name: Prepare Optional Signing
+        shell: pwsh
+        env:
+          LAIVE_SIGN_CERT_PFX_BASE64: ${{ secrets.LAIVE_SIGN_CERT_PFX_BASE64 }}
+          LAIVE_SIGN_CERT_PASSWORD: ${{ secrets.LAIVE_SIGN_CERT_PASSWORD }}
+          LAIVE_SIGN_CERT_SHA1: ${{ secrets.LAIVE_SIGN_CERT_SHA1 }}
+          LAIVE_SIGN_TIMESTAMP_URL: ${{ secrets.LAIVE_SIGN_TIMESTAMP_URL }}
+          LAIVE_ENABLE_WINDOWS_ZIP_SIGNING: ${{ secrets.LAIVE_ENABLE_WINDOWS_ZIP_SIGNING }}
+          LAIVE_REQUIRE_SIGNED_WINDOWS: ${{ secrets.LAIVE_REQUIRE_SIGNED_WINDOWS }}
+        run: |
+          $requiresSigned = @("1", "true", "yes", "on") -contains ($env:LAIVE_REQUIRE_SIGNED_WINDOWS ?? "").Trim().ToLowerInvariant()
+          $hasSigningMaterial = [bool]$env:LAIVE_SIGN_CERT_PFX_BASE64 -or [bool]$env:LAIVE_SIGN_CERT_SHA1
+
+          if ($requiresSigned -and -not $hasSigningMaterial) {
+            throw "LAIVE_REQUIRE_SIGNED_WINDOWS is enabled, but no signing material secret was provided. Configure LAIVE_SIGN_CERT_PFX_BASE64 or LAIVE_SIGN_CERT_SHA1."
+          }
+
+          if (-not $hasSigningMaterial) {
+            Write-Host "[release] Signing not configured."
+            exit 0
+          }
+
+          Add-Content -Path $env:GITHUB_ENV -Value "LAIVE_WINDOWS_INSTALLER_SIGN_SCRIPT=scripts/sign-windows-alpha-artifact.ps1"
+          if ($env:LAIVE_ENABLE_WINDOWS_ZIP_SIGNING -eq "1") {
+            Add-Content -Path $env:GITHUB_ENV -Value "LAIVE_WINDOWS_SIGN_SCRIPT=scripts/sign-windows-alpha-artifact.ps1"
+          }
+
+          if ($env:LAIVE_SIGN_CERT_PFX_BASE64) {
+            $certPath = Join-Path $env:RUNNER_TEMP "laive-signing-cert.pfx"
+            [System.IO.File]::WriteAllBytes($certPath, [Convert]::FromBase64String($env:LAIVE_SIGN_CERT_PFX_BASE64))
+            Add-Content -Path $env:GITHUB_ENV -Value "LAIVE_SIGN_CERT_FILE=$certPath"
+          }
+
+          if ($env:LAIVE_SIGN_CERT_PASSWORD) {
+            Add-Content -Path $env:GITHUB_ENV -Value "LAIVE_SIGN_CERT_PASSWORD=$env:LAIVE_SIGN_CERT_PASSWORD"
+          }
+
+          if ($env:LAIVE_SIGN_CERT_SHA1) {
+            Add-Content -Path $env:GITHUB_ENV -Value "LAIVE_SIGN_CERT_SHA1=$env:LAIVE_SIGN_CERT_SHA1"
+          }
+
+          if ($env:LAIVE_SIGN_TIMESTAMP_URL) {
+            Add-Content -Path $env:GITHUB_ENV -Value "LAIVE_SIGN_TIMESTAMP_URL=$env:LAIVE_SIGN_TIMESTAMP_URL"
+          }
+
+      - name: Build Windows Installer Package
+        env:
+          LAIVE_REQUIRE_SIGNED_WINDOWS: ${{ secrets.LAIVE_REQUIRE_SIGNED_WINDOWS }}
+          LAIVE_BUILD_WINDOWS_MSI: "1"
+        run: npm run package:windows-installer
+
+      - name: Verify Windows Package Integrity
+        shell: pwsh
+        run: |
+          powershell -ExecutionPolicy Bypass -File scripts/verify-windows-alpha.ps1 -BundleRoot dist/windows-alpha/bundle -ChecksumsFile dist/windows-alpha/checksums.sha256 -IncludeExternal
+
+      - name: Upload Windows Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: laive-obs-windows-alpha
+          path: |
+            dist/windows-alpha/laive-obs-windows-alpha.zip
+            dist/windows-alpha/laive-obs-windows-alpha-installer.exe
+            dist/windows-alpha/laive-obs-windows-alpha-installer.msi
+            dist/windows-alpha/checksums.sha256
+            dist/windows-alpha/build-metadata.json
+            dist/windows-alpha/installer-metadata.json
+            dist/windows-alpha/msi-metadata.json
+            dist/windows-alpha/bundle/checksums.bundle.sha256
+
+  build-macos:
+    runs-on: macos-latest
+    timeout-minutes: 45
+    needs:
+      - parity-gate
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Validate Optional Notarization Configuration
+        shell: bash
+        env:
+          LAIVE_REQUIRE_NOTARIZED_MACOS: ${{ secrets.LAIVE_REQUIRE_NOTARIZED_MACOS }}
+          LAIVE_MACOS_SIGN_IDENTITY: ${{ secrets.LAIVE_MACOS_SIGN_IDENTITY }}
+          LAIVE_MACOS_NOTARY_PROFILE: ${{ secrets.LAIVE_MACOS_NOTARY_PROFILE }}
+        run: |
+          set -euo pipefail
+          lower="$(echo "${LAIVE_REQUIRE_NOTARIZED_MACOS:-}" | tr '[:upper:]' '[:lower:]' | xargs)"
+          requires_notary=0
+          if [[ "$lower" == "1" || "$lower" == "true" || "$lower" == "yes" || "$lower" == "on" ]]; then
+            requires_notary=1
+          fi
+          if [[ "$requires_notary" -eq 1 ]]; then
+            if [[ -z "${LAIVE_MACOS_SIGN_IDENTITY:-}" || -z "${LAIVE_MACOS_NOTARY_PROFILE:-}" ]]; then
+              echo "LAIVE_REQUIRE_NOTARIZED_MACOS is enabled, but LAIVE_MACOS_SIGN_IDENTITY or LAIVE_MACOS_NOTARY_PROFILE is missing." >&2
+              exit 1
+            fi
+          fi
+
+      - name: Build macOS Package
+        env:
+          LAIVE_ENABLE_MACOS_NOTARIZATION: ${{ secrets.LAIVE_ENABLE_MACOS_NOTARIZATION }}
+          LAIVE_REQUIRE_NOTARIZED_MACOS: ${{ secrets.LAIVE_REQUIRE_NOTARIZED_MACOS }}
+          LAIVE_MACOS_SIGN_IDENTITY: ${{ secrets.LAIVE_MACOS_SIGN_IDENTITY }}
+          LAIVE_MACOS_NOTARY_PROFILE: ${{ secrets.LAIVE_MACOS_NOTARY_PROFILE }}
+        run: npm run package:macos-alpha
+
+      - name: Verify macOS Package Integrity
+        shell: bash
+        run: |
+          bash scripts/verify-unix-alpha.sh --bundle-root dist/macos-alpha/bundle --checksums-file dist/macos-alpha/checksums.sha256 --include-external
+
+      - name: Upload macOS Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: laive-obs-macos-alpha
+          path: |
+            dist/macos-alpha/laive-obs-macos-alpha.dmg
+            dist/macos-alpha/checksums.sha256
+            dist/macos-alpha/build-metadata.json
+            dist/macos-alpha/macos-notarization-metadata.json
+            dist/macos-alpha/bundle/checksums.bundle.sha256
+
+  build-linux:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    needs:
+      - parity-gate
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Install DEB Tooling
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y dpkg-dev libfuse2
+
+      - name: Build Linux Package
+        env:
+          LAIVE_BUILD_LINUX_APPIMAGE: "1"
+        run: npm run package:linux-alpha
+
+      - name: Verify Linux Package Integrity
+        shell: bash
+        run: |
+          bash scripts/verify-unix-alpha.sh --bundle-root dist/linux-alpha/bundle --checksums-file dist/linux-alpha/checksums.sha256 --include-external
+
+      - name: Upload Linux Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: laive-obs-linux-alpha
+          path: |
+            dist/linux-alpha/laive-obs-linux-alpha.deb
+            dist/linux-alpha/laive-obs-linux-alpha.AppImage
+            dist/linux-alpha/checksums.sha256
+            dist/linux-alpha/build-metadata.json
+            dist/linux-alpha/appimage-metadata.json
+            dist/linux-alpha/bundle/checksums.bundle.sha256
+
+  publish-release:
+    runs-on: ubuntu-latest
+    needs:
+      - parity-gate
+      - build-windows
+      - build-macos
+      - build-linux
+    timeout-minutes: 20
+
+    steps:
+      - name: Download Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+          merge-multiple: true
+
+      - name: Build Global SHA256 Manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd release-assets
+          out_file="LAIVE-OBS-SHA256SUMS.txt"
+          : > "$out_file"
+          while IFS= read -r file; do
+            hash="$(sha256sum "$file" | awk '{print $1}')"
+            rel="${file#./}"
+            printf "%s *%s\n" "$hash" "$rel" >> "$out_file"
+          done < <(find . -type f ! -name "$out_file" | LC_ALL=C sort)
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag || github.ref_name }}
+          prerelease: ${{ contains((github.event_name == 'workflow_dispatch' && github.event.inputs.tag || github.ref_name), 'alpha') || contains((github.event_name == 'workflow_dispatch' && github.event.inputs.tag || github.ref_name), 'beta') || contains((github.event_name == 'workflow_dispatch' && github.event.inputs.tag || github.ref_name), 'rc') }}
+          files: |
+            release-assets/**

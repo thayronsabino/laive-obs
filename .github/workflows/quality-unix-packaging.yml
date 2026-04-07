@@ -1,0 +1,90 @@
+name: Quality Unix Packaging
+
+on:
+  push:
+    branches:
+      - "**"
+  pull_request:
+
+jobs:
+  quality-macos:
+    runs-on: macos-latest
+    timeout-minutes: 35
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build macOS Alpha Package
+        run: npm run package:macos-alpha
+
+      - name: Verify macOS Alpha Package
+        shell: bash
+        run: |
+          bash scripts/verify-unix-alpha.sh --bundle-root dist/macos-alpha/bundle --checksums-file dist/macos-alpha/checksums.sha256 --include-external
+
+      - name: Upload macOS Alpha Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: laive-obs-macos-alpha
+          if-no-files-found: warn
+          path: |
+            dist/macos-alpha/laive-obs-macos-alpha.dmg
+            dist/macos-alpha/checksums.sha256
+            dist/macos-alpha/build-metadata.json
+            dist/macos-alpha/macos-notarization-metadata.json
+            dist/macos-alpha/bundle/checksums.bundle.sha256
+
+  quality-linux:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Install DEB Tooling
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y dpkg-dev libfuse2
+
+      - name: Build Linux Alpha Package
+        env:
+          LAIVE_BUILD_LINUX_APPIMAGE: "1"
+        run: npm run package:linux-alpha
+
+      - name: Verify Linux Alpha Package
+        shell: bash
+        run: |
+          bash scripts/verify-unix-alpha.sh --bundle-root dist/linux-alpha/bundle --checksums-file dist/linux-alpha/checksums.sha256 --include-external
+
+      - name: Upload Linux Alpha Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: laive-obs-linux-alpha
+          if-no-files-found: warn
+          path: |
+            dist/linux-alpha/laive-obs-linux-alpha.deb
+            dist/linux-alpha/laive-obs-linux-alpha.AppImage
+            dist/linux-alpha/checksums.sha256
+            dist/linux-alpha/build-metadata.json
+            dist/linux-alpha/appimage-metadata.json
+            dist/linux-alpha/bundle/checksums.bundle.sha256

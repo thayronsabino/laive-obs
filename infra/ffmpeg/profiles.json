@@ -1,0 +1,29 @@
+{
+  "defaultInherit": {
+    "description": "Copy audio/video from OBS master stream",
+    "args": ["-c", "copy", "-f", "flv"]
+  },
+  "bitrateOverride": {
+    "description": "Override output bitrate using software encoder",
+    "args": [
+      "-c:v",
+      "libx264",
+      "-preset",
+      "veryfast",
+      "-tune",
+      "zerolatency",
+      "-b:v",
+      "{bitrate}k",
+      "-maxrate",
+      "{bitrate}k",
+      "-bufsize",
+      "{bitrate_x2}k",
+      "-c:a",
+      "aac",
+      "-b:a",
+      "128k",
+      "-f",
+      "flv"
+    ]
+  }
+}

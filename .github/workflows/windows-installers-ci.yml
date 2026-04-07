@@ -1,0 +1,143 @@
+name: Windows Installers CI
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Branch or tag to build from"
+        required: true
+        default: "main"
+        type: string
+      require_signed_windows:
+        description: "Fail build when installer/MSI are not signed"
+        required: true
+        default: false
+        type: boolean
+      enable_zip_signing:
+        description: "Also sign ZIP artifact when signing material is available"
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  build-windows-installers:
+    runs-on: windows-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.ref }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Install FFmpeg
+        shell: pwsh
+        run: |
+          if (Get-Command choco -ErrorAction SilentlyContinue) {
+            choco install ffmpeg -y --no-progress
+          } else {
+            winget install --id Gyan.FFmpeg --exact --accept-source-agreements --accept-package-agreements --scope machine
+          }
+
+      - name: Install Inno Setup
+        shell: pwsh
+        run: |
+          if (Get-Command choco -ErrorAction SilentlyContinue) {
+            choco install innosetup -y --no-progress
+          } else {
+            winget install --id JRSoftware.InnoSetup --exact --accept-source-agreements --accept-package-agreements --scope machine
+          }
+
+      - name: Install WiX Toolset
+        shell: pwsh
+        run: |
+          if (Get-Command choco -ErrorAction SilentlyContinue) {
+            choco install wixtoolset -y --no-progress
+          } else {
+            winget install --id WiXToolset.WiXToolset --exact --accept-source-agreements --accept-package-agreements --scope machine
+          }
+
+      - name: Prepare Optional Signing
+        shell: pwsh
+        env:
+          LAIVE_SIGN_CERT_PFX_BASE64: ${{ secrets.LAIVE_SIGN_CERT_PFX_BASE64 }}
+          LAIVE_SIGN_CERT_PASSWORD: ${{ secrets.LAIVE_SIGN_CERT_PASSWORD }}
+          LAIVE_SIGN_CERT_SHA1: ${{ secrets.LAIVE_SIGN_CERT_SHA1 }}
+          LAIVE_SIGN_TIMESTAMP_URL: ${{ secrets.LAIVE_SIGN_TIMESTAMP_URL }}
+          INPUT_REQUIRE_SIGNED_WINDOWS: ${{ github.event.inputs.require_signed_windows }}
+          INPUT_ENABLE_ZIP_SIGNING: ${{ github.event.inputs.enable_zip_signing }}
+        run: |
+          $requiresSigned = @("1", "true", "yes", "on") -contains ($env:INPUT_REQUIRE_SIGNED_WINDOWS ?? "").Trim().ToLowerInvariant()
+          $enableZipSigning = @("1", "true", "yes", "on") -contains ($env:INPUT_ENABLE_ZIP_SIGNING ?? "").Trim().ToLowerInvariant()
+          $hasSigningMaterial = [bool]$env:LAIVE_SIGN_CERT_PFX_BASE64 -or [bool]$env:LAIVE_SIGN_CERT_SHA1
+
+          Add-Content -Path $env:GITHUB_ENV -Value ("LAIVE_REQUIRE_SIGNED_WINDOWS=" + ($(if ($requiresSigned) { "1" } else { "0" })))
+          Add-Content -Path $env:GITHUB_ENV -Value ("LAIVE_ENABLE_WINDOWS_ZIP_SIGNING=" + ($(if ($enableZipSigning) { "1" } else { "0" })))
+
+          if ($requiresSigned -and -not $hasSigningMaterial) {
+            throw "require_signed_windows=true, but no signing material secret was provided."
+          }
+
+          if (-not $hasSigningMaterial) {
+            Write-Host "[installers] Signing not configured."
+            exit 0
+          }
+
+          Add-Content -Path $env:GITHUB_ENV -Value "LAIVE_WINDOWS_INSTALLER_SIGN_SCRIPT=scripts/sign-windows-alpha-artifact.ps1"
+          Add-Content -Path $env:GITHUB_ENV -Value "LAIVE_WINDOWS_MSI_SIGN_SCRIPT=scripts/sign-windows-alpha-artifact.ps1"
+          if ($enableZipSigning) {
+            Add-Content -Path $env:GITHUB_ENV -Value "LAIVE_WINDOWS_SIGN_SCRIPT=scripts/sign-windows-alpha-artifact.ps1"
+          }
+
+          if ($env:LAIVE_SIGN_CERT_PFX_BASE64) {
+            $certPath = Join-Path $env:RUNNER_TEMP "laive-signing-cert.pfx"
+            [System.IO.File]::WriteAllBytes($certPath, [Convert]::FromBase64String($env:LAIVE_SIGN_CERT_PFX_BASE64))
+            Add-Content -Path $env:GITHUB_ENV -Value "LAIVE_SIGN_CERT_FILE=$certPath"
+          }
+
+          if ($env:LAIVE_SIGN_CERT_PASSWORD) {
+            Add-Content -Path $env:GITHUB_ENV -Value "LAIVE_SIGN_CERT_PASSWORD=$env:LAIVE_SIGN_CERT_PASSWORD"
+          }
+
+          if ($env:LAIVE_SIGN_CERT_SHA1) {
+            Add-Content -Path $env:GITHUB_ENV -Value "LAIVE_SIGN_CERT_SHA1=$env:LAIVE_SIGN_CERT_SHA1"
+          }
+
+          if ($env:LAIVE_SIGN_TIMESTAMP_URL) {
+            Add-Content -Path $env:GITHUB_ENV -Value "LAIVE_SIGN_TIMESTAMP_URL=$env:LAIVE_SIGN_TIMESTAMP_URL"
+          }
+
+      - name: Build Windows Installers Package
+        run: npm run package:windows-enterprise
+
+      - name: Verify Windows Package Integrity
+        shell: pwsh
+        run: |
+          powershell -ExecutionPolicy Bypass -File scripts/verify-windows-alpha.ps1 -BundleRoot dist/windows-alpha/bundle -ChecksumsFile dist/windows-alpha/checksums.sha256 -IncludeExternal
+
+      - name: Upload Windows Installers Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-installers-${{ github.run_number }}
+          if-no-files-found: error
+          path: |
+            dist/windows-alpha/laive-obs-windows-alpha.zip
+            dist/windows-alpha/laive-obs-windows-alpha-installer.exe
+            dist/windows-alpha/laive-obs-windows-alpha-installer.msi
+            dist/windows-alpha/checksums.sha256
+            dist/windows-alpha/build-metadata.json
+            dist/windows-alpha/installer-metadata.json
+            dist/windows-alpha/msi-metadata.json
+            dist/windows-alpha/bundle/checksums.bundle.sha256
