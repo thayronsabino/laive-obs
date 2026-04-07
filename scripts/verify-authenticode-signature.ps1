@@ -33,10 +33,10 @@ function Resolve-SignToolPath {
 
   $kitsRoot = Join-Path ${env:ProgramFiles(x86)} "Windows Kits\10\bin"
   if (Test-Path $kitsRoot) {
-    $candidates = Get-ChildItem -Path $kitsRoot -Directory -ErrorAction SilentlyContinue |
+    $candidates = @(Get-ChildItem -Path $kitsRoot -Directory -ErrorAction SilentlyContinue |
       Sort-Object Name -Descending |
       ForEach-Object { Join-Path $_.FullName "x64\signtool.exe" } |
-      Where-Object { Test-Path $_ }
+      Where-Object { Test-Path $_ })
 
     if ($candidates.Count -gt 0) {
       return $candidates[0]
