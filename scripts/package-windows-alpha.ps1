@@ -161,7 +161,16 @@ Write-Host "[pack] Writing startup and verify scripts..."
 $cmd = @"
 @echo off
 cd /d %~dp0
-npm run dev:desktop
+echo INICIALIZANDO LAIVE OBS ALPHA...
+if not exist "node_modules\" (
+  echo [Info] Primeira execucao detectada. Instalando pacotes (requer Node.js)...
+  call npm install
+)
+call npm run dev:desktop
+if %ERRORLEVEL% neq 0 (
+  echo [Erro] Falha ao iniciar o LAIVE OBS. Pressione qualquer tecla para ver o erro.
+  pause
+)
 "@
 Set-Content -Path (Join-Path $bundleDir "start-laive-obs.cmd") -Value $cmd -Encoding ASCII
 
